@@ -1,39 +1,36 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Editor</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js"></script>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Editor and Chat</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js"></script>
+  <link rel="stylesheet" href="style.css">
+  <script type="importmap">
+    {
+      "imports": {
+        "vue": "https://unpkg.com/vue@3/dist/vue.esm-browser.js"
+      }
+    }
+  </script>
 </head>
 <body>
+  <div id="app">
     <div class="container">
-        <!-- Editor Panel -->
-        <div class="editor-panel">
-            <div id="editor"></div>
+      <!-- Editor Panel -->
+      <div class="editor-panel">
+        <div id="editor">
+          function hello() { console.log("Hello, world!"); }
         </div>
+      </div>
 
-        <!-- Chat Panel Container -->
-        <div class="chat-container" id="chat-container"></div>
+      <!-- Chat Panel -->
+      <div class="chat-container">
+        <chat-panel v-if=editor :api="apiEndpoint" :model="model" :editor="editor"></chat-panel>
+      </div>
     </div>
+  </div>
 
-    <script type="module">
-        import { activate } from './chatPlugin.js';
-
-        // Initialize Ace Editor
-        const editor = ace.edit("editor");
-        editor.setTheme("ace/theme/monokai");
-        editor.session.setMode("ace/mode/javascript");
-        editor.session.setMode("ace/mode/html");
-
-        // Call activate to initialize the chat panel and streaming functionality
-        activate({
-            container: '#chat-container',   // The container for the chat panel
-            apiEndpoint: 'http://localhost:11434/v1/chat/completions',  // Ollama API endpoint
-            model: 'codellama',                 // Model for the Ollama API (e.g., llama2)
-            editor: editor                   // Pass Ace editor instance for streaming output
-        });
-    </script>
+  <script type="module" src="./main.js"></script>
 </body>
 </html>

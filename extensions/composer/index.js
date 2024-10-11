@@ -65,7 +65,7 @@ class ChatPanel {
         this.history.push(this.chatInput.value);
         // localStorage.setItem('chatHistory', this.chatInput.value)
         localStorage.setItem('chatLastMessage', this.chatInput.value)
-        
+
         const message = this.chatInput.value.trim();
         if (message) {
             this.appendMessage('User', message);
@@ -99,7 +99,7 @@ class ChatPanel {
 
     // New composer function to handle parsed delta content
     composer(deltaText) {
-       
+
         let codeContent = '';
 
         if (deltaText.includes('```')) {
@@ -164,20 +164,21 @@ class ChatPanel {
                 // Parse each chunk and handle the delta updates
                 const lines = chunk.split('\n');
 
-                for (let line of lines) {
-                    if (line.trim() === '[DONE]') {
+                lines.forEach(line => {
+                    if (!line) return
+                    const data = line.trim().replace('data: ', '');
+
+                    if (data === '[DONE]') {
                         console.log('Done streaming response');
                         done = true
+                        return
                     }
-                    if (line.trim()) {
-                        line = line.replace('data: ', '');
-                        const parsed = safeParse(line);
-                        const deltaText = parsed.choices[0].delta.content;
-                        // console.log(deltaText);
-                        // Call composer with the parsed delta content
-                        this.composer(deltaText);
-                    }
-                }
+                    const parsed = safeParse(data);
+                    const deltaText = parsed.choices[0].delta.content;
+                    // console.log(deltaText);
+                    // Call composer with the parsed delta content
+                    this.composer(deltaText);
+                })
             }
         } catch (error) {
             console.error('Error fetching API response:', error);

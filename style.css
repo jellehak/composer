@@ -68,7 +68,7 @@ body {
     border-radius: 5px;
 }
 
-#send-btn {
+button {
     padding: 10px;
     margin-left: 10px;
     background-color: #007bff;
@@ -78,6 +78,6 @@ body {
     cursor: pointer;
 }
 
-#send-btn:hover {
+button:hover {
     background-color: #0056b3;
 }
