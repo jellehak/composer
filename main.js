@@ -1,9 +1,11 @@
 import { createApp, reactive } from 'vue';
 import ChatPanel from './extensions/composer/Composer.js';
+import {FileTree} from './extensions/fs/index.js';
 
 const app = createApp({
   components: {
     ChatPanel,
+    FileTree
   },
   setup() {
     return reactive({
