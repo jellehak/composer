@@ -78,7 +78,8 @@ class ChatPanel {
     appendMessage(user, message) {
         const chatMessage = document.createElement('div');
         chatMessage.classList.add('chat-message');
-        chatMessage.textContent = `${user}: ${message}`;
+        chatMessage.classList.add(`chat--${user}`);
+        chatMessage.textContent = `${message}`;
         this.chatBox.appendChild(chatMessage);
         this.chatBox.scrollTop = this.chatBox.scrollHeight;
     }
