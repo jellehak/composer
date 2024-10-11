@@ -164,12 +164,17 @@ class ChatPanel {
                 // Parse each chunk and handle the delta updates
                 const lines = chunk.split('\n');
 
-                for (let line of lines) {
-                    if (line.trim() === '[DONE]') {
+                lines.forEach(line => {
+                    if(!line) return
+
+                    const data = line.replace('data: ', '').trim()
+
+                    if (data === '[DONE]') {
                         console.log('Done streaming response');
                         done = true
+                        return
                     }
-                    if (line.trim()) {
+                    if (data) {
                         line = line.replace('data: ', '');
                         const parsed = safeParse(line);
                         const deltaText = parsed.choices[0].delta.content;
@@ -177,7 +182,7 @@ class ChatPanel {
                         // Call composer with the parsed delta content
                         this.composer(deltaText);
                     }
-                }
+                })
             }
         } catch (error) {
             console.error('Error fetching API response:', error);
