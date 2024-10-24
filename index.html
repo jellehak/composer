@@ -1,38 +1,57 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Editor and Chat</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js"></script>
-  <link rel="stylesheet" href="style.css">
-  <script type="importmap">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editor and Chat</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js"></script>
+    <link rel="stylesheet" href="style.css">
+    <script type="importmap">
     {
       "imports": {
         "vue": "https://unpkg.com/vue@3/dist/vue.esm-browser.js"
       }
     }
   </script>
+  <style>
+    .panel { 
+        /* flex-grow: 1; */
+        overflow:auto;
+        resize: both;
+    }
+  </style>
 </head>
+
 <body>
-  <div id="app">
-    <div class="container">
-      <!-- Editor Panel -->
-      <div class="editor-panel">
-        <div id="editor">
-          function hello() { console.log("Hello, world!"); }
+    <div id="app">
+        <div class="container">
+            <!-- <file-tree @item:click="onClick"></file-tree> -->
+
+            <div class="panel" style="width: 50vw; ">
+                <div id="editor">
+                    <!-- <script>
+                        function hello() { console.log("Hello, world!"); }
+                    </script> -->
+                </div>
+            </div>
+
+            <div class="panel" style="width: 50vw; ">
+                <div class="panel" v-if="editor">
+                    <!-- {{editor.getValue()}} -->
+                    <iframe id="preview" style="width: 100%;" :src="toBlob(contentDebounced)"></iframe>
+                </div>
+    
+                <!-- Chat Panel -->
+                <div class="chat-container">
+                    <chat-panel v-if=editor :api="apiEndpoint" :model="model" :editor="editor"></chat-panel>
+                </div>
+            </div>
+
         </div>
-      </div>
-
-      <!-- Chat Panel -->
-      <div class="chat-container">
-        <chat-panel v-if=editor :api="apiEndpoint" :model="model" :editor="editor"></chat-panel>
-      </div>
-
-    <file-tree></file-tree>
     </div>
-  </div>
 
-  <script type="module" src="./main.js"></script>
+    <script type="module" src="./main.js"></script>
 </body>
+
 </html>

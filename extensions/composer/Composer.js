@@ -1,4 +1,5 @@
-import { ref } from 'vue';
+import { ref, reactive } from 'vue';
+import { OpenAI } from './openai.js';
 
 export default {
   name: 'ChatPanel',
@@ -7,10 +8,10 @@ export default {
       type: String,
       required: true,
     },
-    model: {
-      type: String,
-      default: 'llama2',
-    },
+    // model: {
+    //   type: String,
+    //   default: 'llamacoder',
+    // },
     editor: {
       type: Object, // Ace editor instance
       required: true,
@@ -19,6 +20,10 @@ export default {
   setup(props) {
     const inputMessage = ref('');
     const messages = ref([]);
+    const state = reactive({
+      model: 'codellama',
+      models: []
+    });
 
     // Append a message to the chat panel
     const appendMessage = (user, text) => {
@@ -27,6 +32,15 @@ export default {
       const chatBox = document.getElementById('chat-box');
       chatBox.scrollTop = chatBox.scrollHeight;
     };
+
+    async function getModels() {
+      const response = await fetch('http://localhost:11434/v1/models')
+      const data = await response.json()
+      return data.data;
+    }
+    getModels().then(models => {
+      state.models = models;
+    })
 
     // Send a message and handle the API response stream
     const sendMessage = async () => {
@@ -43,47 +57,49 @@ export default {
 
     // Stream response from Ollama API
     const streamResponse = async (userMessage) => {
+      const message = reactive({
+        user: 'Ollama',
+        text: 'Generating response...',
+        pending: true
+      })
+      messages.value.push(message);
       try {
-        const response = await fetch(props.api, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            model: props.model,
-            prompt: userMessage,
-            stream: true, // Enable streaming
-          }),
+
+        const openai = new OpenAI({
+          serverUrl: props.api,
+          // apiKey: localStorage['OPENAI_API_KEY'], // This is the default and can be omitted
         });
 
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        let done = false;
+        const { editor } = props;
+        const messages = [
+          { role: 'system', content: 'You are an experienced developer. Be very brief. Respond only with code.' },
+          { role: 'user', content: `Use the following code: ${editor.getValue()}`},
+          // { role: 'user', content: `Respond in the following format: PARTIAL: <start line> <end line>\n<the new code>`},
+          { role: 'user', content: userMessage }
+        ]
 
+        const stream = await openai.chat.completions.create({
+          messages,
+          model: state.model,
+          stream: true
+        });
         let accumulatedText = ''; // Accumulate the response text
-        while (!done) {
-          const { value, done: readerDone } = await reader.read();
-          done = readerDone;
-          const chunk = decoder.decode(value, { stream: true });
 
-          // Parse each streamed chunk and extract the delta
-          const lines = chunk.split('\n');
-          for (let line of lines) {
-            if (line.trim()) {
-              const parsed = JSON.parse(line);
-              if (parsed && parsed.delta) {
-                const deltaText = parsed.delta;
+        for await (const message of stream) {
+          // console.log(message);
+          const deltaText = message.choices[0]?.delta?.content || '';
 
-                // Update the editor with the streamed delta text
-                accumulatedText += deltaText;
-                props.editor.setValue(accumulatedText, -1); // Keep cursor at the end
+          // Update the editor with the streamed delta text
+          accumulatedText += deltaText;
+          props.editor.setValue(accumulatedText, -1); // Keep cursor at the end
 
-                // Append the delta to the chat as well
-                appendMessage('Ollama', deltaText);
-              }
-            }
-          }
+          // Append the delta to the chat as well
+          // appendMessage('Ollama', deltaText);
+          // page.content += message.choices[0]?.delta?.content || ''
         }
+
+        message.text = 'done'
+        message.pending = false
       } catch (error) {
         console.error('Error fetching API response:', error);
         appendMessage('Ollama', 'Error getting response from Ollama.');
@@ -91,16 +107,23 @@ export default {
     };
 
     return {
+      state,
       inputMessage,
       messages,
       sendMessage,
     };
   },
   template: `  <div class="chat-panel">
-    <h2>Chat Panel</h2>
+  <select v-model="state.model">
+    <option v-for="model in state.models" :key="model.id" :value="model.id">{{model.id}}</option>
+  </select>
     <div id="chat-box" class="chat-box">
       <div v-for="(message, index) in messages" :key="index" class="chat-message" :class="{'response': message.user === 'Ollama'}">
-        {{ message.user }}: {{ message.text }}
+        {{ message.user }}: 
+        <div v-if='message.pending'>generating...</div>
+        <div v-if='!message.pending'>
+        {{ message.text }}
+        </div>
       </div>
     </div>
 
